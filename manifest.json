@@ -1,0 +1,11 @@
+[
+  {
+    "guid": "c4d062be-e4e4-469f-b3d1-5c84a50d1c06",
+    "name": "JellyDirectGuard",
+    "description": "Enforces direct play by disabling video transcoding on user accounts, automatically applied to new users.",
+    "overview": "Direct-play enforcement for Jellyfin users",
+    "owner": "elvis",
+    "category": "Administration",
+    "versions": []
+  }
+]

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <title>JellyDirectGuard</title>
+</head>
+<body>
+<div id="JellyDirectGuardConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
+     data-require="emby-input,emby-button,emby-checkbox">
+    <style>
+        #JellyDirectGuardConfigPage table.jdg-status {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.8em 0 1.2em;
+        }
+        #JellyDirectGuardConfigPage table.jdg-status th,
+        #JellyDirectGuardConfigPage table.jdg-status td {
+            padding: 0.45em 0.6em;
+            text-align: left;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+        }
+        #JellyDirectGuardConfigPage table.jdg-status th {
+            opacity: 0.75;
+            font-weight: 600;
+        }
+        #JellyDirectGuardConfigPage .jdg-scroll {
+            overflow-x: auto;
+        }
+    </style>
+    <div data-role="content">
+        <div class="content-primary">
+            <form id="JellyDirectGuardConfigForm">
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h2 class="sectionTitle">JellyDirectGuard</h2>
+                </div>
+                <p>Força <b>direct play</b>: desativa a transcodificação de vídeo na política dos usuários,
+                   automaticamente — inclusive para contas novas criadas por ferramentas como o Wizarr.
+                   Sem GPU, um único transcode de vídeo derruba o servidor; com direct play, streaming é só I/O.</p>
+
+                <h3>Regras</h3>
+                <label class="checkboxContainer">
+                    <input is="emby-checkbox" type="checkbox" id="EnforcementEnabled"/>
+                    <span>Ativar a aplicação automática da política</span>
+                </label>
+                <label class="checkboxContainer">
+                    <input is="emby-checkbox" type="checkbox" id="DisableVideoTranscoding"/>
+                    <span>Bloquear transcodificação de vídeo (o coração do plugin)</span>
+                </label>
+                <label class="checkboxContainer">
+                    <input is="emby-checkbox" type="checkbox" id="AllowRemuxing"/>
+                    <span>Permitir remux (troca de container, sem re-encode — barato)</span>
+                </label>
+                <label class="checkboxContainer">
+                    <input is="emby-checkbox" type="checkbox" id="AllowAudioTranscoding"/>
+                    <span>Permitir transcodificação de áudio (barato, útil p/ AC3→AAC)</span>
+                </label>
+                <label class="checkboxContainer">
+                    <input is="emby-checkbox" type="checkbox" id="SkipAdministrators"/>
+                    <span>Não tocar em administradores (válvula de escape para diagnóstico)</span>
+                </label>
+                <div class="inputContainer">
+                    <input is="emby-input" id="ExcludedUsers" type="text" label="Usuários ignorados (opcional)"
+                           placeholder="Ex.: elvis, conta-teste"/>
+                    <div class="fieldDescription">Nomes separados por vírgula. Nunca serão alterados pelo plugin.</div>
+                </div>
+
+                <h3>Comportamento</h3>
+                <div class="inputContainer">
+                    <input is="emby-input" id="RecheckDelaySeconds" type="number" min="0" label="Re-verificação após criação de usuário (segundos)"/>
+                    <div class="fieldDescription">Ferramentas como o Wizarr gravam a própria política logo depois de criar a conta; esta segunda passada garante que a regra final é a do plugin. 0 desativa.</div>
+                </div>
+                <label class="checkboxContainer">
+                    <input is="emby-checkbox" type="checkbox" id="SweepOnStartup"/>
+                    <span>Varredura completa ao iniciar o servidor</span>
+                </label>
+                <div class="inputContainer">
+                    <input is="emby-input" id="PeriodicSweepMinutes" type="number" min="0" label="Varredura periódica (minutos)"/>
+                    <div class="fieldDescription">Edições de política feitas no painel ou via API não geram evento visível a plugins — a varredura garante que não permaneçam. 0 desativa (fica só a tarefa agendada de 12 h).</div>
+                </div>
+
+                <h3>Status dos usuários</h3>
+                <div style="margin: 0.6em 0;">
+                    <button is="emby-button" type="button" id="btnRefreshStatus" class="raised">
+                        <span>Atualizar status</span>
+                    </button>
+                    <button is="emby-button" type="button" id="btnEnforceNow" class="raised button-submit">
+                        <span>Aplicar agora</span>
+                    </button>
+                    <span id="enforceResult" style="margin-left: 1em;"></span>
+                </div>
+                <div class="jdg-scroll">
+                    <table class="jdg-status">
+                        <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Vídeo</th>
+                            <th>Remux</th>
+                            <th>Áudio</th>
+                            <th>Situação</th>
+                        </tr>
+                        </thead>
+                        <tbody id="statusBody">
+                        <tr><td colspan="5">Carregando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div>
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                        <span>Salvar</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        (function () {
+            var pluginId = 'c4d062be-e4e4-469f-b3d1-5c84a50d1c06';
+
+            var fields = ['ExcludedUsers', 'RecheckDelaySeconds', 'PeriodicSweepMinutes'];
+            var checkboxes = ['EnforcementEnabled', 'DisableVideoTranscoding', 'AllowRemuxing',
+                'AllowAudioTranscoding', 'SkipAdministrators', 'SweepOnStartup'];
+
+            function loadConfig(page) {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    fields.forEach(function (f) {
+                        page.querySelector('#' + f).value = config[f] != null ? config[f] : '';
+                    });
+                    checkboxes.forEach(function (c) {
+                        page.querySelector('#' + c).checked = !!config[c];
+                    });
+                    Dashboard.hideLoadingMsg();
+                });
+            }
+
+            function saveConfig(page) {
+                Dashboard.showLoadingMsg();
+                return ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    fields.forEach(function (f) {
+                        config[f] = page.querySelector('#' + f).value;
+                    });
+                    config.RecheckDelaySeconds = parseInt(config.RecheckDelaySeconds, 10);
+                    if (isNaN(config.RecheckDelaySeconds)) { config.RecheckDelaySeconds = 60; }
+                    config.PeriodicSweepMinutes = parseInt(config.PeriodicSweepMinutes, 10);
+                    if (isNaN(config.PeriodicSweepMinutes)) { config.PeriodicSweepMinutes = 10; }
+                    checkboxes.forEach(function (c) {
+                        config[c] = page.querySelector('#' + c).checked;
+                    });
+                    return ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    });
+                });
+            }
+
+            function esc(s) {
+                var d = document.createElement('div');
+                d.textContent = s == null ? '' : String(s);
+                return d.innerHTML;
+            }
+
+            function refreshStatus(page) {
+                var body = page.querySelector('#statusBody');
+                ApiClient.ajax({
+                    type: 'GET',
+                    url: ApiClient.getUrl('JellyDirectGuard/Status'),
+                    dataType: 'json'
+                }).then(function (r) {
+                    if (!r.ok || !r.users.length) {
+                        body.innerHTML = '<tr><td colspan="5">Nenhum usuário.</td></tr>';
+                        return;
+                    }
+                    body.innerHTML = r.users.map(function (u) {
+                        var situ;
+                        if (u.isAdmin) { situ = '👑 Admin'; }
+                        else if (u.excluded) { situ = '🚫 Ignorado'; }
+                        else if (!u.videoTranscoding) { situ = '✅ Direct play'; }
+                        else { situ = '⚠️ Transcode liberado'; }
+                        return '<tr><td>' + esc(u.name) + '</td>'
+                            + '<td>' + (u.videoTranscoding ? '🔓' : '🔒') + '</td>'
+                            + '<td>' + (u.remuxing ? '✔️' : '—') + '</td>'
+                            + '<td>' + (u.audioTranscoding ? '✔️' : '—') + '</td>'
+                            + '<td>' + situ + '</td></tr>';
+                    }).join('');
+                }).catch(function () {
+                    body.innerHTML = '<tr><td colspan="5">❌ Erro ao consultar o servidor.</td></tr>';
+                });
+            }
+
+            function enforceNow(page) {
+                var el = page.querySelector('#enforceResult');
+                el.textContent = '⏳ ...';
+                saveConfig(page).then(function () {
+                    return ApiClient.ajax({
+                        type: 'POST',
+                        url: ApiClient.getUrl('JellyDirectGuard/Enforce'),
+                        dataType: 'json'
+                    });
+                }).then(function (r) {
+                    if (r.ok) {
+                        el.textContent = '✅ Alterados: ' + r.changed.length
+                            + ' · Em conformidade: ' + r.compliant.length
+                            + ' · Ignorados: ' + r.skipped.length;
+                    } else {
+                        el.textContent = '❌ falhou';
+                    }
+                    refreshStatus(page);
+                }).catch(function () {
+                    el.textContent = '❌ Erro ao chamar o servidor';
+                });
+            }
+
+            document.querySelector('#JellyDirectGuardConfigPage')
+                .addEventListener('pageshow', function () {
+                    loadConfig(this);
+                    refreshStatus(this);
+                });
+
+            document.querySelector('#JellyDirectGuardConfigForm')
+                .addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    saveConfig(this.closest('.page'));
+                    return false;
+                });
+
+            document.querySelector('#btnEnforceNow').addEventListener('click', function () {
+                enforceNow(this.closest('.page'));
+            });
+            document.querySelector('#btnRefreshStatus').addEventListener('click', function () {
+                refreshStatus(this.closest('.page'));
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>
