@@ -6,6 +6,7 @@
     "overview": "Direct-play enforcement for Jellyfin users",
     "owner": "elvis",
     "category": "Administration",
+    "imageUrl": "https://elvisfalmeida.github.io/JellyDirectGuard/jellyguard_logo.png",
     "versions": [
       {
         "version": "1.0.0.0",

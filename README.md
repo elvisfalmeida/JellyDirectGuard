@@ -1,4 +1,8 @@
-<h1 align="center">🛡️ JellyDirectGuard</h1>
+<p align="center">
+  <img src="jellyguard_logo.png" alt="JellyDirectGuard" width="220"/>
+</p>
+
+<h1 align="center">JellyDirectGuard</h1>
 
 <p align="center">
   <a href="https://github.com/elvisfalmeida/JellyDirectGuard/releases/latest"><img src="https://img.shields.io/github/v/release/elvisfalmeida/JellyDirectGuard?label=release" alt="Release"/></a>
