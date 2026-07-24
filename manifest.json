@@ -6,6 +6,15 @@
     "overview": "Direct-play enforcement for Jellyfin users",
     "owner": "elvis",
     "category": "Administration",
-    "versions": []
+    "versions": [
+      {
+        "version": "1.0.0.0",
+        "changelog": "Primeira vers\u00e3o: aplica\u00e7\u00e3o autom\u00e1tica de direct play (bloqueio de transcodifica\u00e7\u00e3o de v\u00eddeo) na pol\u00edtica dos usu\u00e1rios \u2014 em tempo real na cria\u00e7\u00e3o da conta, com re-verifica\u00e7\u00e3o p\u00f3s-cria\u00e7\u00e3o, varredura peri\u00f3dica, tarefa agendada e tabela de status com bot\u00e3o Aplicar agora no Dashboard.\n\nChangelog completo: https://github.com/elvisfalmeida/JellyDirectGuard/releases/tag/v1.0.0.0",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/elvisfalmeida/JellyDirectGuard/releases/download/v1.0.0.0/jellydirectguard_1.0.0.0.zip",
+        "checksum": "501d6c4f6d66a73436fe98ad033d465b",
+        "timestamp": "2026-07-24T13:12:10Z"
+      }
+    ]
   }
 ]
